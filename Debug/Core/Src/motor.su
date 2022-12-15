@@ -1,3 +1,4 @@
-../Core/Src/motor.c:18:6:motorPowerOn	8	static
-../Core/Src/motor.c:26:6:motorPowerOff	8	static
-../Core/Src/motor.c:35:6:motorSetSpeed	16	static
+../Core/Src/motor.c:20:6:motorPowerOn	16	static
+../Core/Src/motor.c:34:6:motorPowerOff	8	static
+../Core/Src/motor.c:43:6:motorSetSpeed	16	static
+../Core/Src/motor.c:47:6:set_alpha	16	static

@@ -13,6 +13,6 @@
 void motorPowerOn(void);
 void motorPowerOff(void);
 void motorSetSpeed(int speed);
-
+void set_alpha(int a);
 
 #endif /* INC_MOTOR_H_ */

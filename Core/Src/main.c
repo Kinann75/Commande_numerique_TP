@@ -116,7 +116,7 @@ int main(void)
 		if (flag==1)
 		{
 			HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin,GPIO_PIN_SET);
-			for(i=0;i<1000;i++)
+			for(i=0;i<70;i++)
 				{
 				}
 			HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin,GPIO_PIN_RESET);
