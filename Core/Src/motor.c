@@ -41,7 +41,14 @@ void motorPowerOff(void){
   * @retval None
   */
 void motorSetSpeed(int speed){
+	int alpha=0;
 	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin); // just for test, you can delete it
+	/*alpha=((speed+3000)/6000)*100;
+	alpha=(int)alpha;
+	char a=sprintf("rapport cyclique : %d\r\n",alpha);
+	HAL_UART_Transmit(&huart2,a,sizeof(a), HAL_MAX_DELAY);
+	set_alpha(alpha);
+	*/
 }
 
 void set_alpha(int a)
@@ -51,3 +58,5 @@ void set_alpha(int a)
 	TIM1->CCR2=5311-a*53;
 
 }
+
+

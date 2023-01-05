@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
+#include "dma.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -39,6 +41,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define ADC_BUF_SIZE 8
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -54,6 +57,9 @@ extern uint8_t uartRxReceived;
 extern uint8_t uartRxBuffer[UART_RX_BUFFER_SIZE];
 extern uint8_t uartTxBuffer[UART_TX_BUFFER_SIZE];
 uint8_t flag=0;
+uint8_t flagADC=0;
+uint32_t ADC_Buffer[20];
+char chaine[30];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -95,18 +101,38 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_TIM1_Init();
   MX_USART2_UART_Init();
+  MX_ADC1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 	HAL_UART_Receive_IT(&huart2, uartRxBuffer, UART_RX_BUFFER_SIZE);
 	HAL_Delay(1);
 	shellInit();
+
+	HAL_TIM_Base_Start(&htim2);
+
+	if(HAL_OK!=HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED))
+	{
+		Error_Handler();
+	}
+	if(HAL_OK!=HAL_ADC_Start_DMA(&hadc1, ADC_Buffer, 10)){
+		Error_Handler();
+	}
+
+
+
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
 	int i=0;
 
+
+	/*if(HAL_OK!=HAL_TIM_Base_Start(&htim1)){
+		Error_Handler();
+	}*/
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -117,8 +143,8 @@ int main(void)
 		{
 			HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin,GPIO_PIN_SET);
 			for(i=0;i<70;i++)
-				{
-				}
+			{
+			}
 			HAL_GPIO_WritePin(ISO_RESET_GPIO_Port, ISO_RESET_Pin,GPIO_PIN_RESET);
 			flag=0;
 		}
@@ -129,6 +155,13 @@ int main(void)
 				shellPrompt();
 			}
 			uartRxReceived = 0;
+		}
+
+		if (flagADC==1)
+		{
+			//sprintf(chaine,"resultat de conversion : %li\r\n", ADC_Buffer[0]);
+			//HAL_UART_Transmit(&huart2, (uint8_t *)chaine, strlen(chaine), HAL_MAX_DELAY);
+			flagADC=0;
 		}
 
     /* USER CODE END WHILE */
@@ -189,6 +222,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	flag=1;
 }
 
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+
+	flagADC=1;
+}
 /* USER CODE END 4 */
 
 /**
