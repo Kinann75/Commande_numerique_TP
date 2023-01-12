@@ -42,6 +42,13 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define ADC_BUF_SIZE 8
+#define PERIODE_VITESSE 0.1
+#define V_CONSIGNE 200
+#define I_CONSIGNE 3
+#define P 0.5
+#define I 0.01
+#define D 0
+#define Te 0.00000625
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -60,6 +67,30 @@ uint8_t flag=0;
 uint8_t flagADC=0;
 uint32_t ADC_Buffer[20];
 char chaine[30];
+int vitesse=0;
+int vitesse_buffer[2];
+extern double courant_buffer[2];
+double erreur[2];
+
+double alpha1;
+
+double alpha2[2];
+double alpha_corrige[2];
+int32_t valeur_timer;
+double Current_loop_buffer[3];
+extern sum;
+extern Imoyen;
+extern mesure_mean;
+extern mesure_voltage;
+
+int i=0;
+int j=0;
+alpha2[0]=0;
+alpha2[1]=0;
+erreur[0]=0;
+erreur[1]=0;
+alpha_corrige[0]=0;
+alpha_corrige[1]=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -106,6 +137,8 @@ int main(void)
   MX_USART2_UART_Init();
   MX_ADC1_Init();
   MX_TIM2_Init();
+  MX_TIM3_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
 	HAL_UART_Receive_IT(&huart2, uartRxBuffer, UART_RX_BUFFER_SIZE);
 	HAL_Delay(1);
@@ -122,12 +155,13 @@ int main(void)
 	}
 
 
-
+	TIM3->CNT=32000;
+	HAL_TIM_Encoder_Start(&htim3,TIM_CHANNEL_ALL);
+	HAL_TIM_Base_Start_IT(&htim5);
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
-	int i=0;
 
 
 	/*if(HAL_OK!=HAL_TIM_Base_Start(&htim1)){
@@ -163,6 +197,33 @@ int main(void)
 			//HAL_UART_Transmit(&huart2, (uint8_t *)chaine, strlen(chaine), HAL_MAX_DELAY);
 			flagADC=0;
 		}
+		for(j=0;j<20;j++)
+		{
+			sum=sum+ADC_Buffer[j];
+		}
+		mesure_mean=sum/10;
+		j=0;
+		courant_buffer[0]=courant_buffer[1];
+		mesure_voltage=((double)mesure_mean*3.3)/4096.0;
+		Imoyen=(mesure_voltage-2.5)*12;
+		courant_buffer[1]=Imoyen;
+		sum=0;
+		erreur[0]=erreur[1];
+		alpha2[0]=alpha2[1];
+		erreur[1]=I_CONSIGNE-courant_buffer[1];
+		alpha_corrige[0]=alpha_corrige[1];
+		alpha1=erreur[1]*P;
+		alpha2[1]=alpha2[0]+((I*Te)/2)*(erreur[1]-erreur[0]);
+		alpha_corrige[1]=alpha_corrige[0]+alpha1+alpha2[1];
+		if (alpha_corrige[1]>50)
+		{
+			alpha_corrige[1]=50;
+		}
+		else if(alpha_corrige[1]<0)
+		{
+			alpha_corrige[1]=0;
+		}
+		set_alpha((50+(int)alpha_corrige[1]));
 
     /* USER CODE END WHILE */
 
@@ -246,7 +307,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
+  if(htim->Instance==TIM5){
+	  valeur_timer=TIM3->CNT;
+	  vitesse_buffer[0]=vitesse;
+	  vitesse=((((valeur_timer-32000)*60)/4096)/PERIODE_VITESSE);
+	  vitesse_buffer[1]=vitesse;
+	  TIM3->CNT=32000;
 
+  }
   /* USER CODE END Callback 1 */
 }
 

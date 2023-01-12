@@ -51,12 +51,18 @@ void motorSetSpeed(int speed){
 	*/
 }
 
+/**
+  * @brief  Set the motor speed
+  * @param  a : set alpha to the value of a in %
+  * @retval None
+  */
 void set_alpha(int a)
 {
-	//HAL_UART_Transmit(&huart2, a, sizeof(a), HAL_MAX_DELAY);
-	TIM1->CCR1=a*53;
-	TIM1->CCR2=5311-a*53;
+	TIM1->CCR1=a*(TIM1->ARR)/100;
+	TIM1->CCR2=TIM1->ARR-a*(TIM1->ARR)/100;
 
 }
+
+
 
 

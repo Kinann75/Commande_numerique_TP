@@ -53,22 +53,27 @@ const uint8_t cmdNotFound[]="Command not found\r\n";
 const uint8_t alpha[]="rapport cyclique\r\n";
 const uint8_t setspeed[]="modification de la vitesse\r\n";
 const uint8_t mesure[]="mesure du courant\r\n";
+const uint8_t showspeed[]="mesure de vitesse\r\n";
 
 
 char cmdBuffer[CMD_BUFFER_SIZE];
 extern uint8_t 	uartRxBuffer[UART_RX_BUFFER_SIZE];
 extern uint16_t ADC_Buffer[20];
+extern int vitesse;
 uint8_t	idxCmd;
 char* argv[MAX_ARGS];
 uint8_t	argc;
 extern uint8_t uartTxBuffer[UART_TX_BUFFER_SIZE];
 extern uint8_t stringSize;
 char chaine1[30];
+char chaine2[30];
 int i=0;
 int sum=0;
 int mesure_mean=0;
 double mesure_voltage=0;
 double Imoyen=0;
+double courant_buffer[2];
+
 
 
 /**
@@ -192,13 +197,20 @@ void shellExec(void){
 		}
 		mesure_mean=sum/10;
 		i=0;
+		courant_buffer[0]=courant_buffer[1];
 		mesure_voltage=((double)mesure_mean*3.3)/4096.0;
 		Imoyen=(mesure_voltage-2.5)*12;
-
-		sprintf(chaine1,"le courant vaut %f\r\n",Imoyen);
+		courant_buffer[1]=Imoyen;
+		sprintf(chaine1,"le courant vaut %f A \r\n",Imoyen);
 		HAL_UART_Transmit(&huart2, chaine1,strlen(chaine1),HAL_MAX_DELAY);
 		sum=0;
 	}
+	else if (strcmp(argv[0],"showspeed")==0)
+		{
+			sprintf(chaine2,"la vitesse est de %d tr.min \r\n",vitesse);
+			HAL_UART_Transmit(&huart2,chaine2 ,strlen(chaine2), HAL_MAX_DELAY);
+
+		}
 	else{
 		shellCmdNotFound();
 	}
