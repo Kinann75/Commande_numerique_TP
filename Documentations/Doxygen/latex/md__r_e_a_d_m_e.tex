@@ -1,0 +1,9 @@
+Bonjour, voici le TP de commande numerique de dispositifs. Nous sommes Matthieu Gozard et Kinann Guillossou-\/\+Jnaid. Vous trouverzez sur ce lien github notre compte rendu \char`\"{}\+TP commande numérique\char`\"{} en pdf. Ce Readme nous sert à vous spécifier rapidement l\textquotesingle{}avancement de notre travail.
+
+Nous avons généré la PWM de channel1 et sa complémentaire. DT=205 CCR=5312 Nous avons généré la PWM de channel2 et sa complémentaire.
+
+Nous avons câblé le hacheur et configurer l\textquotesingle{}ISO reset. Nous avons fait en sorte de pouvoir modifier les PWM, avons cablé le moteur et l\textquotesingle{}avons fait tourner à différentes vitesses en changeant le rapport cyclique.
+
+Nous avons configuré l\textquotesingle{}ADC1 et le DMA en association avec le timer2 afin de faire une mesure de courant. Ensuite, nous avons converti la valeur numérique du courant en sa valeur réelle en A. Le courant moyen est affiché sur le terminal.
+
+Nous avons utilisé la sonde tachymétrique afin de récupérer la vitesse du moteur et de l\textquotesingle{}afficher si besoin à travers d\textquotesingle{}une commande shell. Pour cela, nous avons utilisé deux timers, le timer 3 pour \char`\"{}compter\char`\"{} le nombre fronts montants et descendants et le timer 5 pour effectuer des mesures de la vitesse à intervalle de temps régulier (100ms). 

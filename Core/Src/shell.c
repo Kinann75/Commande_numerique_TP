@@ -54,6 +54,7 @@ const uint8_t alpha[]="rapport cyclique\r\n";
 const uint8_t setspeed[]="modification de la vitesse\r\n";
 const uint8_t mesure[]="mesure du courant\r\n";
 const uint8_t showspeed[]="mesure de vitesse\r\n";
+const uint8_t asserv[]="asservissement en vitesse lance\r\n";
 
 
 char cmdBuffer[CMD_BUFFER_SIZE];
@@ -67,13 +68,12 @@ extern uint8_t uartTxBuffer[UART_TX_BUFFER_SIZE];
 extern uint8_t stringSize;
 char chaine1[30];
 char chaine2[30];
-int i=0;
 int sum=0;
 int mesure_mean=0;
 double mesure_voltage=0;
 double Imoyen=0;
 double courant_buffer[2];
-
+extern flag_asserv;
 
 
 /**
@@ -143,6 +143,8 @@ uint8_t shellGetChar(void){
   * @retval None
   */
 void shellExec(void){
+	int i=0;
+
 	if(strcmp(argv[0],"set")==0){
 		if(strcmp(argv[1],"PA5")==0 && ((strcmp(argv[2],"0")==0)||(strcmp(argv[2],"1")==0)) ){
 			HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, atoi(argv[2]));
@@ -211,6 +213,17 @@ void shellExec(void){
 			HAL_UART_Transmit(&huart2,chaine2 ,strlen(chaine2), HAL_MAX_DELAY);
 
 		}
+	else if (strcmp(argv[0],"asserv")==0)
+			{
+				sprintf(chaine2,"asservissement lance à la vitesse \r\n");
+				HAL_UART_Transmit(&huart2,chaine2 ,strlen(chaine2), HAL_MAX_DELAY);
+				if(flag_asserv==0){
+					flag_asserv=1;
+				}
+				else{
+					flag_asserv=0;
+				}
+			}
 	else{
 		shellCmdNotFound();
 	}

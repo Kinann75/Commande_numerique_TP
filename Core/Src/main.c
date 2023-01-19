@@ -43,10 +43,12 @@
 /* USER CODE BEGIN PD */
 #define ADC_BUF_SIZE 8
 #define PERIODE_VITESSE 0.1
-#define V_CONSIGNE 200
-#define I_CONSIGNE 3
-#define P 0.5
-#define I 0.01
+#define V_CONSIGNE 500
+#define I_CONSIGNE 0
+#define P 0.0002
+#define I 3
+#define Pv 0.0002
+#define Iv 3
 #define D 0
 #define Te 0.00000625
 /* USER CODE END PD */
@@ -69,28 +71,29 @@ uint32_t ADC_Buffer[20];
 char chaine[30];
 int vitesse=0;
 int vitesse_buffer[2];
+float erreur_vitesse[2]={0};
+float alpha2_v[2]={0};
+float alpha1_v=0;
+float alpha_corrige_v[2]={0};
 extern double courant_buffer[2];
-double erreur[2];
+float erreur[2]={0};
 
-double alpha1;
+float alpha1=0;
 
-double alpha2[2];
-double alpha_corrige[2];
+float alpha2[2]={0};
+float alpha_corrige[2]={0};
 int32_t valeur_timer;
 double Current_loop_buffer[3];
-extern sum;
-extern Imoyen;
-extern mesure_mean;
-extern mesure_voltage;
+extern int sum;
+extern double Imoyen;
+extern double mesure_mean;
+extern double mesure_voltage;
+int flag_vitesse=0;
+int flag_asserv=0;
 
 int i=0;
 int j=0;
-alpha2[0]=0;
-alpha2[1]=0;
-erreur[0]=0;
-erreur[1]=0;
-alpha_corrige[0]=0;
-alpha_corrige[1]=0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -164,6 +167,14 @@ int main(void)
 	HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
 
 
+	erreur_vitesse[0]=erreur_vitesse[1];
+	alpha2_v[0]=alpha2_v[1];
+	alpha_corrige_v[0]=alpha_corrige_v[1];
+	erreur_vitesse[1]=V_CONSIGNE-vitesse;
+	alpha1_v=erreur_vitesse[1] *Pv;
+	alpha2_v[1]=alpha2_v[0]+((Iv*Te)/2)*(erreur_vitesse[1]-erreur_vitesse[0]);
+	alpha_corrige_v[1]=alpha_corrige_v[0]+alpha1_v+alpha2_v[1];
+
 	/*if(HAL_OK!=HAL_TIM_Base_Start(&htim1)){
 		Error_Handler();
 	}*/
@@ -191,39 +202,62 @@ int main(void)
 			uartRxReceived = 0;
 		}
 
-		if (flagADC==1)
-		{
-			//sprintf(chaine,"resultat de conversion : %li\r\n", ADC_Buffer[0]);
-			//HAL_UART_Transmit(&huart2, (uint8_t *)chaine, strlen(chaine), HAL_MAX_DELAY);
-			flagADC=0;
+
+
+		if (flag_asserv==1){
+			if(flag_vitesse==1){
+				erreur_vitesse[0]=erreur_vitesse[1];
+				alpha2_v[0]=alpha2_v[1];
+				alpha_corrige_v[0]=alpha_corrige_v[1];
+				erreur_vitesse[1]=V_CONSIGNE-vitesse;
+				alpha1_v=erreur_vitesse[1]*Pv;
+				alpha2_v[1]=alpha2_v[0]+((Iv*Te)/2)*(erreur_vitesse[1]-erreur_vitesse[0]);
+				if (alpha2_v[1]>7)
+				{
+					alpha2_v[1]=7;
+				}
+				else if(alpha2_v[1]<-7)
+				{
+					alpha2_v[1]=-7;
+				}
+				alpha_corrige_v[1]=alpha_corrige_v[0]+alpha1_v+alpha2_v[1];
+				flag_vitesse=0;
+			}
+
+
+			if (flagADC==1){
+				sum=0;
+				for(j=0;j<20;j++)
+				{
+					sum=sum+ADC_Buffer[j];
+				}
+				mesure_mean=sum/10;
+				j=0;
+				courant_buffer[0]=courant_buffer[1];
+				mesure_voltage=((double)mesure_mean*3.3)/4096.0;
+				Imoyen=(mesure_voltage-2.5)*12;
+				courant_buffer[1]=Imoyen;
+				sum=0;
+				erreur[0]=erreur[1];
+				alpha2[0]=alpha2[1];
+				//erreur[1]=I_CONSIGNE-courant_buffer[1];
+				erreur[1]=alpha_corrige_v[1]-courant_buffer[1];
+				alpha_corrige[0]=alpha_corrige[1];
+				alpha1=erreur[1]*P;
+				alpha2[1]=alpha2[0]+((I*Te)/2)*(erreur[1]-erreur[0]);
+				alpha_corrige[1]=alpha_corrige[0]+alpha1+alpha2[1];
+				if (alpha_corrige[1]>50)
+				{
+					alpha_corrige[1]=50;
+				}
+				else if(alpha_corrige[1]<-50)
+				{
+					alpha_corrige[1]=-50;
+				}
+				set_alpha((50+(int)alpha_corrige[1]));
+				flagADC=0;
+			}
 		}
-		for(j=0;j<20;j++)
-		{
-			sum=sum+ADC_Buffer[j];
-		}
-		mesure_mean=sum/10;
-		j=0;
-		courant_buffer[0]=courant_buffer[1];
-		mesure_voltage=((double)mesure_mean*3.3)/4096.0;
-		Imoyen=(mesure_voltage-2.5)*12;
-		courant_buffer[1]=Imoyen;
-		sum=0;
-		erreur[0]=erreur[1];
-		alpha2[0]=alpha2[1];
-		erreur[1]=I_CONSIGNE-courant_buffer[1];
-		alpha_corrige[0]=alpha_corrige[1];
-		alpha1=erreur[1]*P;
-		alpha2[1]=alpha2[0]+((I*Te)/2)*(erreur[1]-erreur[0]);
-		alpha_corrige[1]=alpha_corrige[0]+alpha1+alpha2[1];
-		if (alpha_corrige[1]>50)
-		{
-			alpha_corrige[1]=50;
-		}
-		else if(alpha_corrige[1]<0)
-		{
-			alpha_corrige[1]=0;
-		}
-		set_alpha((50+(int)alpha_corrige[1]));
 
     /* USER CODE END WHILE */
 
@@ -313,6 +347,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	  vitesse=((((valeur_timer-32000)*60)/4096)/PERIODE_VITESSE);
 	  vitesse_buffer[1]=vitesse;
 	  TIM3->CNT=32000;
+	  flag_vitesse=1;
 
   }
   /* USER CODE END Callback 1 */
